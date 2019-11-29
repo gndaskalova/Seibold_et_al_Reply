@@ -233,7 +233,7 @@ mcmc.outputs <- mcmc.outputs %>%
 
 mcmc.outputs$modelName[duplicated(mcmc.outputs$modelName)] <- " "
 
-colnames(mcmc.outputs) <- c("Model", "Variable", "Post. mean", "Lowe 95% CI", "Upper 95% CI",
+colnames(mcmc.outputs) <- c("Model", "Variable", "Post. mean", "Lower 95% CI", "Upper 95% CI",
                             "Eff. sample", "pMCMC", "Effect")
 library(stargazer)
 stargazer(mcmc.outputs, type = "html", summary = FALSE, digits = 3)
