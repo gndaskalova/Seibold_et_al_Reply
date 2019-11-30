@@ -4,6 +4,8 @@
 load("rarefied_mediansOct2017.Rdata")
 load("inv_all_biomass26thNov_rarefy.RData")
 load("inv_all_abundance26thNov_rarefy.RData")
+bioTIMEmetadata <- read.csv("bioTIMEmetadataSept18.csv")
+
 
 # Libraries ----
 library(tidyr)
@@ -57,7 +59,7 @@ summary(fresh.richness$YEAR)  # starts in 1917, ends in 2014
 fresh.richness$year2 <- fresh.richness$YEAR - 1994  # median of zero
 summary(fresh.richness$year2)  # centered on zero
 
-richness_fresh_inv <- MCMCglmm(S ~ year2, random = ~YEAR + us(1 + year2):rarefyID, 
+richness_fresh_inv <- MCMCglmm(S ~ year2, random = ~BIOME_MAP:YEAR + us(1 + year2):rarefyID, 
                                prior = pa_prior, data = fresh.richness, 
                                family = "poisson", pr = TRUE, 
                                nitt = 100000, burnin = 10000)
@@ -71,7 +73,7 @@ summary(terr.richness$YEAR)  # starts in 1898, ends in 2015
 terr.richness$year2 <- terr.richness$YEAR - 1990  # median of zero
 summary(terr.richness$year2)  # centered on zero
 
-richness_terr_inv <- MCMCglmm(S ~ year2, random = ~YEAR + us(1 + year2):rarefyID, 
+richness_terr_inv <- MCMCglmm(S ~ year2, random = ~BIOME_MAP:YEAR + us(1 + year2):rarefyID, 
                               prior = pa_prior,  data = terr.richness, 
                               family = "poisson", pr = TRUE, 
                               nitt = 100000, burnin = 10000)
@@ -82,6 +84,20 @@ save(richness_terr_inv, file = "data/richness_terr_inv_m.RData")
 
 # Biomass models ----
 
+# Add biome information
+meta <- bioTIMEmetadata %>% dplyr::select(STUDY_ID, BIOME_MAP)
+meta$STUDY_ID <- as.factor(as.character(meta$STUDY_ID))
+
+inv_all <- inv_all %>% mutate(STUDY_ID = rarefyID) %>%
+  separate(STUDY_ID, c("STUDY_ID", "NA"))
+inv_all$STUDY_ID <- as.factor(as.character(inv_all$STUDY_ID))
+inv_all <- left_join(inv_all, meta, by = "STUDY_ID")
+
+inv_all_abun <- inv_all_abun %>% mutate(STUDY_ID = rarefyID) %>%
+  separate(STUDY_ID, c("STUDY_ID", "NA"))
+inv_all_abun$STUDY_ID <- as.factor(as.character(inv_all_abun$STUDY_ID))
+inv_all_abun <- left_join(inv_all_abun, meta, by = "STUDY_ID")
+
 # Freshwater
 fresh.biomass <- inv_all %>% filter(TAXA == "Freshwater invertebrates")
 hist(fresh.biomass$log_biomass)
@@ -89,8 +105,7 @@ summary(fresh.biomass$YEAR)  # starts in 1969, ends in 2010
 fresh.biomass$year2 <- fresh.biomass$YEAR - 1994  # median of zero
 summary(fresh.biomass$year2)  # centered on zero
 
-
-biomass_fresh_inv <- MCMCglmm(log_biomass ~ year2, random = ~YEAR + us(1 + year2):rarefyID, 
+biomass_fresh_inv <- MCMCglmm(log_biomass ~ year2, random = ~BIOME_MAP:YEAR + us(1 + year2):rarefyID, 
                               prior = pa_prior, data = fresh.biomass, 
                               pr = TRUE, nitt = 100000, burnin = 10000)
 summary(biomass_fresh_inv)
@@ -110,7 +125,7 @@ summary(terr.biomass$YEAR)  # starts in 2004, ends in 2014
 terr.biomass$year2 <- terr.biomass$YEAR - 2009  # median of zero
 summary(terr.biomass$year2)  # centered on zero
 
-biomass_terr_inv <- MCMCglmm(log_biomass ~ year2, random = ~YEAR + us(1 + year2):rarefyID, 
+biomass_terr_inv <- MCMCglmm(log_biomass ~ year2, random = ~BIOME_MAP:YEAR + us(1 + year2):rarefyID, 
                              prior = pa_prior, data = terr.biomass, 
                              pr = TRUE, nitt = 100000, burnin = 10000)
 
@@ -133,7 +148,7 @@ summary(fresh.abundance$YEAR)  # starts in 1916, ends in 2016
 fresh.abundance$year2 <- fresh.abundance$YEAR - 1995  # median of zero
 summary(fresh.abundance$year2)  # centered on zero
 
-abundance_fresh_inv <- MCMCglmm(round(Abundance) ~ year2, random = ~YEAR + us(1 + year2):rarefyID, 
+abundance_fresh_inv <- MCMCglmm(round(Abundance) ~ year2, random = ~BIOME_MAP:YEAR + us(1 + year2):rarefyID, 
                                 prior = pa_prior, data = fresh.abundance, 
                                 family = "poisson", pr = TRUE, 
                                 nitt = 100000, burnin = 10000)
@@ -154,7 +169,7 @@ summary(terr.abundance$YEAR)  # starts in 1898, ends in 2015
 terr.abundance$year2 <- terr.abundance$YEAR - 2003  # median of zero
 summary(terr.abundance$year2)  # centered on zero
 
-abundance_terr_inv <- MCMCglmm(round(Abundance) ~ year2, random = ~YEAR + us(1 + year2):rarefyID, 
+abundance_terr_inv <- MCMCglmm(round(Abundance) ~ year2, random = ~BIOME_MAP:YEAR + us(1 + year2):rarefyID, 
                                prior = pa_prior, data = terr.abundance, 
                                family = "poisson", pr = TRUE, 
                                nitt = 100000, burnin = 10000)
@@ -167,73 +182,3 @@ duration_abundance2 <- terr.abundance %>% group_by(rarefyID) %>%
   mutate(duration = max(YEAR) - min(YEAR)) %>%
   dplyr::select(rarefyID, duration) %>% distinct()
 save(duration_abundance2, file = "data/duration_abundance2.RData")
-
-# Model output table ----
-
-# Function to extract MCMCglmm model summary outputs
-clean.MCMC <- function(x) {
-  sols <- summary(x)$solutions  # pull out relevant info from model summary
-  Gcovs <- summary(x)$Gcovariances
-  Rcovs <- summary(x)$Rcovariances
-  
-  fixed <- data.frame(row.names(sols), sols, row.names = NULL)  # convert to dataframes with the row.names as the first col
-  random <- data.frame(row.names(Gcovs), Gcovs, row.names = NULL)
-  residual <- data.frame(row.names(Rcovs), Rcovs, row.names = NULL)
-  
-  names(fixed)[names(fixed) == "row.names.sols."] <- "variable"  # change the columns names to variable, so they all match
-  names(random)[names(random) == "row.names.Gcovs."] <- "variable"
-  names(residual)[names(residual) == "row.names.Rcovs."] <- "variable"
-  
-  fixed$effect <- "fixed"  # add ID column for type of effect (fixed, random, residual)
-  random$effect <- "random"
-  residual$effect <- "residual"
-  
-  modelTerms <- as.data.frame(bind_rows(fixed, random, residual))  # merge it all together
-}
-
-getName.MCMC <- function(x) deparse(substitute(x))  # adding the model name
-
-# Load models
-load("data/richness_terr_inv_m.RData")
-load("data/richness_fresh_inv_m.RData")
-load("data/abundance_terr_inv_m.RData")
-load("data/abundance_fresh_inv_m.RData")
-load("data/biomass_terr_inv_m.RData")
-load("data/biomass_fresh_inv_m.RData")
-
-# Creating a summary table of model outputs for models with random effects
-dataList <- list(biomass_fresh_inv, biomass_terr_inv,
-                 abundance_fresh_inv, abundance_terr_inv,
-                 richness_fresh_inv, richness_terr_inv)
-
-# Create a list of input model names
-dataListNames <- list("Biomass (freshwater)", "Biomass (terrestrial)",
-                      "Abundance (freshwater)", "Abundance (terrestrial)",
-                      "Richness (freshwater)", "Richness (terrestrial)")
-
-# Get the clean.MCMC outputs and add modelName columns to each element for ID purposes
-readyList <- mapply(cbind, lapply(dataList, clean.MCMC), "modelName" = dataListNames, SIMPLIFY = F)
-
-# Turn the list of data.frames into one big data.frame
-mcmc.outputs <- as.data.frame(do.call(rbind, readyList))
-
-# Write csv
-write.csv(mcmc.outputs, file = "figures/biotime_mcmc_outputs_29thNov2019.csv")
-
-# Tidy up table
-colnames(mcmc.outputs)
-mcmc.outputs <- mcmc.outputs %>%
-  dplyr::select(modelName, variable,
-                post.mean, l.95..CI,
-                u.95..CI, eff.samp,
-                pMCMC, effect) %>%
-  mutate(variable = str_replace_all(variable, pattern = c('YEAR' = "year",
-                                                  'year2' = "year",
-                                                  'units' = 'sigma')))
-
-mcmc.outputs$modelName[duplicated(mcmc.outputs$modelName)] <- " "
-
-colnames(mcmc.outputs) <- c("Model", "Variable", "Post. mean", "Lower 95% CI", "Upper 95% CI",
-                            "Eff. sample", "pMCMC", "Effect")
-library(stargazer)
-stargazer(mcmc.outputs, type = "html", summary = FALSE, digits = 3)
