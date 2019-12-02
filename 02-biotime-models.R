@@ -47,9 +47,13 @@ ggsave(inv.map, filename = "figures/inv_map.png", height = 5, width = 8)
 # Define priors ----
 a <- 10000
 
-pa_prior<-list(R=list(V=diag(1), nu=0.002), 
-               G=list(	G1=list(V=diag(1), nu=1, alpha.mu=c(0), alpha.V=diag(1)*a),
-                       G1=list(V=diag(2), nu=2, alpha.mu=c(0,0), alpha.V=diag(2)*a)))
+pa_prior <- list(R = list(V = diag(1), nu = 0.002),
+               G=list(G1 = list(V = diag(1), nu = 1, alpha.mu = c(0), alpha.V = diag(1)*a),
+                      G1 = list(V = diag(1), nu = 1, alpha.mu = c(0), alpha.V = diag(1)*a),
+                      G1 = list(V = diag(2), nu = 2, alpha.mu = c(0,0), alpha.V = diag(2)*a)))
+
+# year2 is a continuous year variable
+# YEAR is a categorical variable
 
 # Species richness models ----
 
@@ -59,7 +63,7 @@ summary(fresh.richness$YEAR)  # starts in 1917, ends in 2014
 fresh.richness$year2 <- fresh.richness$YEAR - 1994  # median of zero
 summary(fresh.richness$year2)  # centered on zero
 
-richness_fresh_inv <- MCMCglmm(S ~ year2, random = ~BIOME_MAP:YEAR + us(1 + year2):rarefyID, 
+richness_fresh_inv <- MCMCglmm(S ~ year2, random = ~YEAR + BIOME_MAP:YEAR + us(1 + year2):rarefyID,
                                prior = pa_prior, data = fresh.richness, 
                                family = "poisson", pr = TRUE, 
                                nitt = 100000, burnin = 10000)
@@ -73,7 +77,7 @@ summary(terr.richness$YEAR)  # starts in 1898, ends in 2015
 terr.richness$year2 <- terr.richness$YEAR - 1990  # median of zero
 summary(terr.richness$year2)  # centered on zero
 
-richness_terr_inv <- MCMCglmm(S ~ year2, random = ~BIOME_MAP:YEAR + us(1 + year2):rarefyID, 
+richness_terr_inv <- MCMCglmm(S ~ year2, random = ~YEAR + BIOME_MAP:YEAR + us(1 + year2):rarefyID,
                               prior = pa_prior,  data = terr.richness, 
                               family = "poisson", pr = TRUE, 
                               nitt = 100000, burnin = 10000)
@@ -105,7 +109,7 @@ summary(fresh.biomass$YEAR)  # starts in 1969, ends in 2010
 fresh.biomass$year2 <- fresh.biomass$YEAR - 1994  # median of zero
 summary(fresh.biomass$year2)  # centered on zero
 
-biomass_fresh_inv <- MCMCglmm(log_biomass ~ year2, random = ~BIOME_MAP:YEAR + us(1 + year2):rarefyID, 
+biomass_fresh_inv <- MCMCglmm(log_biomass ~ year2, random = ~YEAR + BIOME_MAP:YEAR + us(1 + year2):rarefyID,
                               prior = pa_prior, data = fresh.biomass, 
                               pr = TRUE, nitt = 100000, burnin = 10000)
 summary(biomass_fresh_inv)
@@ -125,7 +129,7 @@ summary(terr.biomass$YEAR)  # starts in 2004, ends in 2014
 terr.biomass$year2 <- terr.biomass$YEAR - 2009  # median of zero
 summary(terr.biomass$year2)  # centered on zero
 
-biomass_terr_inv <- MCMCglmm(log_biomass ~ year2, random = ~BIOME_MAP:YEAR + us(1 + year2):rarefyID, 
+biomass_terr_inv <- MCMCglmm(log_biomass ~ year2, random = ~YEAR + BIOME_MAP:YEAR + us(1 + year2):rarefyID,
                              prior = pa_prior, data = terr.biomass, 
                              pr = TRUE, nitt = 100000, burnin = 10000)
 
@@ -148,7 +152,7 @@ summary(fresh.abundance$YEAR)  # starts in 1916, ends in 2016
 fresh.abundance$year2 <- fresh.abundance$YEAR - 1995  # median of zero
 summary(fresh.abundance$year2)  # centered on zero
 
-abundance_fresh_inv <- MCMCglmm(round(Abundance) ~ year2, random = ~BIOME_MAP:YEAR + us(1 + year2):rarefyID, 
+abundance_fresh_inv <- MCMCglmm(round(Abundance) ~ year2, random = ~YEAR + BIOME_MAP:YEAR + us(1 + year2):rarefyID,
                                 prior = pa_prior, data = fresh.abundance, 
                                 family = "poisson", pr = TRUE, 
                                 nitt = 100000, burnin = 10000)
@@ -169,7 +173,7 @@ summary(terr.abundance$YEAR)  # starts in 1898, ends in 2015
 terr.abundance$year2 <- terr.abundance$YEAR - 2003  # median of zero
 summary(terr.abundance$year2)  # centered on zero
 
-abundance_terr_inv <- MCMCglmm(round(Abundance) ~ year2, random = ~BIOME_MAP:YEAR + us(1 + year2):rarefyID, 
+abundance_terr_inv <- MCMCglmm(round(Abundance) ~ year2, random = ~YEAR + BIOME_MAP:YEAR + us(1 + year2):rarefyID, 
                                prior = pa_prior, data = terr.abundance, 
                                family = "poisson", pr = TRUE, 
                                nitt = 100000, burnin = 10000)
