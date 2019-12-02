@@ -182,3 +182,73 @@ duration_abundance2 <- terr.abundance %>% group_by(rarefyID) %>%
   mutate(duration = max(YEAR) - min(YEAR)) %>%
   dplyr::select(rarefyID, duration) %>% distinct()
 save(duration_abundance2, file = "data/duration_abundance2.RData")
+
+# Model output table ----
+
+# Function to extract MCMCglmm model summary outputs
+clean.MCMC <- function(x) {
+  sols <- summary(x)$solutions  # pull out relevant info from model summary
+  Gcovs <- summary(x)$Gcovariances
+  Rcovs <- summary(x)$Rcovariances
+  
+  fixed <- data.frame(row.names(sols), sols, row.names = NULL)  # convert to dataframes with the row.names as the first col
+  random <- data.frame(row.names(Gcovs), Gcovs, row.names = NULL)
+  residual <- data.frame(row.names(Rcovs), Rcovs, row.names = NULL)
+  
+  names(fixed)[names(fixed) == "row.names.sols."] <- "variable"  # change the columns names to variable, so they all match
+  names(random)[names(random) == "row.names.Gcovs."] <- "variable"
+  names(residual)[names(residual) == "row.names.Rcovs."] <- "variable"
+  
+  fixed$effect <- "fixed"  # add ID column for type of effect (fixed, random, residual)
+  random$effect <- "random"
+  residual$effect <- "residual"
+  
+  modelTerms <- as.data.frame(bind_rows(fixed, random, residual))  # merge it all together
+}
+
+getName.MCMC <- function(x) deparse(substitute(x))  # adding the model name
+
+# Load models
+load("data/richness_terr_inv_m.RData")
+load("data/richness_fresh_inv_m.RData")
+load("data/abundance_terr_inv_m.RData")
+load("data/abundance_fresh_inv_m.RData")
+load("data/biomass_terr_inv_m.RData")
+load("data/biomass_fresh_inv_m.RData")
+
+# Creating a summary table of model outputs for models with random effects
+dataList <- list(biomass_fresh_inv, biomass_terr_inv,
+                 abundance_fresh_inv, abundance_terr_inv,
+                 richness_fresh_inv, richness_terr_inv)
+
+# Create a list of input model names
+dataListNames <- list("Biomass (freshwater)", "Biomass (terrestrial)",
+                      "Abundance (freshwater)", "Abundance (terrestrial)",
+                      "Richness (freshwater)", "Richness (terrestrial)")
+
+# Get the clean.MCMC outputs and add modelName columns to each element for ID purposes
+readyList <- mapply(cbind, lapply(dataList, clean.MCMC), "modelName" = dataListNames, SIMPLIFY = F)
+
+# Turn the list of data.frames into one big data.frame
+mcmc.outputs <- as.data.frame(do.call(rbind, readyList))
+
+# Write csv
+write.csv(mcmc.outputs, file = "figures/biotime_mcmc_outputs_2ndDec2019.csv")
+
+# Tidy up table
+colnames(mcmc.outputs)
+mcmc.outputs <- mcmc.outputs %>%
+  dplyr::select(modelName, variable,
+                post.mean, l.95..CI,
+                u.95..CI, eff.samp,
+                pMCMC, effect) %>%
+  mutate(variable = str_replace_all(variable, pattern = c('YEAR' = "year",
+                                                  'year2' = "year",
+                                                  'units' = 'sigma')))
+
+mcmc.outputs$modelName[duplicated(mcmc.outputs$modelName)] <- " "
+
+colnames(mcmc.outputs) <- c("Model", "Variable", "Post. mean", "Lower 95% CI", "Upper 95% CI",
+                            "Eff. sample", "pMCMC", "Effect")
+library(stargazer)
+stargazer(mcmc.outputs, type = "html", summary = FALSE, digits = 3)
