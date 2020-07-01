@@ -1,6 +1,9 @@
 # Figures for the reply to Seibold et al.
+# Gergana Daskalova
+# gndaskalova@gmail.com
 
 # Note - the model scripts have to be run first to generate the objects needed here
+# or the model objects need to be loaded
 
 # Libraries ----
 library(tidyverse)
@@ -12,14 +15,16 @@ library(gridExtra)
 library(ggrepel)
 library(readr)
 library(ggforce)
+library(ggalt)
+library(ggthemes)
 
 # Theme ----
 theme_inv <- function(){
   theme_bw() +
     theme(axis.text = element_text(size = 14), 
           axis.title = element_text(size = 14),
-          axis.line.x = element_line(color = "black"), 
-          axis.line.y = element_line(color = "black"),
+          axis.line.x = element_line(color="black"), 
+          axis.line.y = element_line(color="black"),
           panel.border = element_blank(),
           panel.grid.major.x = element_blank(),                                          
           panel.grid.minor.x = element_blank(),
@@ -142,35 +147,45 @@ ggsave(figure1_legend, filename = "figures/figure1_2ndDec.pdf",
 
 # Figure 2 ----
 # Load models and duration of time series
-load("data/biomass_terr_inv_m.RData")
-load("data/biomass_fresh_inv_m.RData")
-load("data/abundance_fresh_inv_m.RData")
-load("data/abundance_terr_inv_m.RData") # Too big for GitHub
-load("data/richness_terr_inv_m.RData")
-load("data/richness_fresh_inv_m.RData")
-load("data/duration_abundance2.RData")
-load("data/duration_abundance.RData")
-load("data/duration_biomass.RData")
-load("data/duration_biomass2.RData")
-load("rarefied_medians2018.Rdata") # Too big for GitHub
+# Note that the model output files are too large to be stored on GitHub
 
+setwd("~/Downloads/Seibold June 2020 models")
+load("biomass_terr_inv_m24June.RData")
+load("biomass_fresh_inv_m24June.RData")
+load("abundance_fresh_inv_m24June.RData")
+load("abundance_terr_inv_m24June.RData")
+load("richness_terr_inv_m24June.RData")
+load("richness_fresh_inv_m24June.RData")
+load("duration_abundance2.RData")
+load("duration_abundance.RData")
+load("duration_biomass.RData")
+load("duration_biomass2.RData")
+load("biomass_fresh_inv_m_vanklink24June.RData")
+load("abundance_fresh_inv_m_vanklink24June.RData")
+load("abundance_terr_inv_m_vanklink24June.RData")
+load("biomass_terr_inv_m_vanklink24June.RData")
+
+setwd("~/LandUseHub/data/input")
+load("rarefied_mediansOct2017.Rdata")
+
+setwd("~/ArmageddonHub")
 # ** Biomass ----
 # Extract slopes and 95% CIs for each time series
-biomass_fresh_eff <- as.data.frame(biomass_fresh_inv$Sol)[85:92]
-biomass_fresh_eff <- biomass_fresh_eff %>% gather(rarefyID, slope, 1:8) %>%
-  group_by(rarefyID) %>% summarise(slope = mean(slope + -0.03067))
+biomass_fresh_eff <- as.data.frame(biomass_fresh_inv$Sol)[76:80]
+biomass_fresh_eff <- biomass_fresh_eff %>% gather(rarefyID, slope, 1:5) %>%
+  group_by(rarefyID) %>% summarise(slope = mean(slope + -0.022560))
 biomass_fresh_eff$taxa <- "Freshwater"
 biomass_fresh_intervals <- as.data.frame(HPDinterval(biomass_fresh_inv$Sol + biomass_fresh_inv$Sol[, 'year2']))
-biomass_fresh_intervals <- biomass_fresh_intervals[85:92,]
+biomass_fresh_intervals <- biomass_fresh_intervals[76:80,]
 biomass_fresh_intervals$rarefyID <- rownames(biomass_fresh_intervals)
 biomass_fresh_eff <- left_join(biomass_fresh_eff, biomass_fresh_intervals)
 
-biomass_terr_eff <- as.data.frame(biomass_terr_inv$Sol)[50:74]
-biomass_terr_eff <- biomass_terr_eff %>% gather(rarefyID, slope, 1:25) %>%
-  group_by(rarefyID) %>% summarise(slope = mean(slope + 0.02255))
+biomass_terr_eff <- as.data.frame(biomass_terr_inv$Sol)[46:66]
+biomass_terr_eff <- biomass_terr_eff %>% gather(rarefyID, slope, 1:21) %>%
+  group_by(rarefyID) %>% summarise(slope = mean(slope + 0.02336))
 biomass_terr_eff$taxa <- "Terrestrial"
 biomass_terr_intervals <- as.data.frame(HPDinterval(biomass_terr_inv$Sol + biomass_terr_inv$Sol[, 'year2']))
-biomass_terr_intervals <- biomass_terr_intervals[50:74,]
+biomass_terr_intervals <- biomass_terr_intervals[46:66,]
 biomass_terr_intervals$rarefyID <- rownames(biomass_terr_intervals)
 biomass_terr_eff <- left_join(biomass_terr_eff, biomass_terr_intervals)
 
@@ -205,13 +220,65 @@ biomass_effs_published$label <- NA
 biomass_effs_published[1,11] <- "Hallmann et al. 2017"
 biomass_effs_published[2,11] <- "Macgregor et al. 2019"
 
+# Add van Klink et al. effect sizes
+# Extract slopes and 95% CIs for each time series
+biomass_fresh_eff_vanklink <- as.data.frame(biomass_fresh_inv2$Sol)[339:377]
+biomass_fresh_eff_vanklink <- biomass_fresh_eff_vanklink %>% gather(rarefyID, slope, 1:39) %>%
+  group_by(rarefyID) %>% summarise(slope = mean(slope + -0.023896))
+biomass_fresh_eff_vanklink$taxa <- "Freshwater"
+biomass_fresh_intervals_vanklink <- as.data.frame(HPDinterval(biomass_fresh_inv2$Sol + biomass_fresh_inv2$Sol[, 'year2']))
+biomass_fresh_intervals_vanklink <- biomass_fresh_intervals_vanklink[339:377,]
+biomass_fresh_intervals_vanklink$rarefyID <- rownames(biomass_fresh_intervals_vanklink)
+biomass_fresh_eff_vanklink <- left_join(biomass_fresh_eff_vanklink, biomass_fresh_intervals_vanklink)
+
+biomass_terr_eff_vanklink <- as.data.frame(biomass_terr_inv2$Sol)[135:152]
+biomass_terr_eff_vanklink <- biomass_terr_eff_vanklink %>% gather(rarefyID, slope, 1:18) %>%
+  group_by(rarefyID) %>% summarise(slope = mean(slope + -0.04130))
+biomass_terr_eff_vanklink$taxa <- "Terrestrial"
+biomass_terr_intervals_vanklink <- as.data.frame(HPDinterval(biomass_terr_inv2$Sol + biomass_terr_inv2$Sol[, 'year2']))
+biomass_terr_intervals_vanklink <- biomass_terr_intervals_vanklink[135:152,]
+biomass_terr_intervals_vanklink$rarefyID <- rownames(biomass_terr_intervals_vanklink)
+biomass_terr_eff_vanklink <- left_join(biomass_terr_eff_vanklink, biomass_terr_intervals_vanklink)
+
+# Combine effect sizes from freshwater and terrestrial in one object
+biomass_effs_vanklink <- bind_rows(biomass_fresh_eff_vanklink, biomass_terr_eff_vanklink)
+biomass_effs_vanklink$rarefyID <- gsub("year2.StudyDur_ID.", "", biomass_effs_vanklink$rarefyID)
+
+# Add duration
+vanKlink_S1 <- readRDS("data/aax9931-vanKlink-SM-Data-S1.rds")
+vanKlink_S1$StudyDur_ID <- paste0(vanKlink_S1$Datasource_ID, vanKlink_S1$Duration)
+duration_vk <- vanKlink_S1 %>% dplyr::select(StudyDur_ID, Duration) %>% distinct()
+colnames(duration_vk)[1] <- "rarefyID"
+str(duration_vk)
+duration_vk$rarefyID <- as.character(duration_vk$rarefyID)
+biomass_effs_vanklink <- left_join(biomass_effs_vanklink, duration_vk, by = "rarefyID")
+
+# Create a column for significant or not
+biomass_effs_vanklink <- biomass_effs_vanklink %>%  mutate(category = with(., case_when(
+  (lower < 0 & upper < 0) ~ 'significant',
+  (lower > 0 & upper > 0) ~ 'significant',
+  (lower < 0 & upper > 0) ~ 'non-significant')))
+
+colnames(biomass_effs)
+colnames(biomass_effs_vanklink)
+
+colnames(biomass_effs_vanklink)[6] <- "duration"
+
+biomass_effs$dataset <- "BioTIME"
+biomass_effs_vanklink$dataset <- "van Klink et al."
+
+biomass_effs_all <- bind_rows(biomass_effs, biomass_effs_vanklink)
+biomass_effs_all$cat2 <- paste0(biomass_effs_all$category, biomass_effs_all$dataset)
+
 (figure2a <- ggplot() +
-    geom_point(data = biomass_effs, aes(x = duration, y = slope,
-                                        colour = taxa, shape = category), size = 3, alpha = 0.5) +
-    geom_point(data = biomass_effs[biomass_effs$category == "non-significant",], aes(x = duration, y = slope,
-                                                                                     colour = taxa, shape = category), size = 3.2, alpha = 0.5) +
-    geom_point(data = biomass_effs[biomass_effs$category == "non-significant",], aes(x = duration, y = slope,
-                                                                                     colour = taxa, shape = category), size = 3.4, alpha = 0.5) +
+    geom_point(data = biomass_effs_all, aes(x = duration, y = slope,
+                                        colour = taxa, shape = cat2), size = 3, alpha = 0.5) +
+    geom_point(data = biomass_effs_all[biomass_effs_all$category == "non-significant",], aes(x = duration, y = slope,
+                                                                                     colour = taxa, shape = cat2), 
+               size = 3.2, alpha = 0.5) +
+    geom_point(data = biomass_effs_all[biomass_effs_all$category == "non-significant",], aes(x = duration, y = slope,
+                                                                                     colour = taxa, shape = cat2), 
+               size = 3.4, alpha = 0.5) +
     geom_point(data = seibold_effs3, aes(x = duration, y = slope), 
                colour = "red", size = 3, alpha = 1) +
     geom_label_repel(data = seibold_effs3,
@@ -244,7 +311,7 @@ biomass_effs_published[2,11] <- "Macgregor et al. 2019"
                      min.segment.length = 1, inherit.aes = FALSE) +
     theme_inv() +
     guides(shape = FALSE) +
-    scale_shape_manual(values = c(21, 19)) +
+    scale_shape_manual(values = c(21, 2, 19, 17)) +
     scale_x_continuous(limits = c(0, 101)) +
     scale_colour_manual(values = c("#59BAC0", "#d8b70a")) +
     geom_hline(yintercept = 0, linetype = "dotted") +
@@ -252,30 +319,30 @@ biomass_effs_published[2,11] <- "Macgregor et al. 2019"
     guides(colour = FALSE) +
     labs(x = "\nDuration (years)", y = "log(Biomass) / year\n", title = "a"))
 
-ggsave(figure2a, filename = "figures/figure2a.png", height = 5, width = 5)
+ggsave(figure2a, filename = "figures/figure2a_June.png", height = 5, width = 5)
 
 # ** Abundance ----
 
 # Extract slopes and upper and lower 95% CI
 
 # Freshwater
-abundance_fresh_eff <- as.data.frame(abundance_fresh_inv$Sol)[207:278]
-abundance_fresh_eff <- abundance_fresh_eff %>% gather(rarefyID, slope, 1:72) %>%
-  group_by(rarefyID) %>% summarise(slope = mean(slope + -0.02934))
+abundance_fresh_eff <- as.data.frame(abundance_fresh_inv$Sol)[144:156]
+abundance_fresh_eff <- abundance_fresh_eff %>% gather(rarefyID, slope, 1:13) %>%
+  group_by(rarefyID) %>% summarise(slope = mean(slope + 0.008035))
 abundance_fresh_eff$taxa <- "Freshwater"
 abundance_fresh_intervals <- as.data.frame(HPDinterval(abundance_fresh_inv$Sol + abundance_fresh_inv$Sol[, 'year2']))
-abundance_fresh_intervals <- abundance_fresh_intervals[207:278,]
+abundance_fresh_intervals <- abundance_fresh_intervals[144:156,]
 abundance_fresh_intervals$rarefyID <- rownames(abundance_fresh_intervals)
 abundance_fresh_eff <- left_join(abundance_fresh_eff, abundance_fresh_intervals)
 abundance_fresh_eff$rarefyID <- gsub("year2.rarefyID.", "", abundance_fresh_eff$rarefyID)
 
 # Terrestrial
-abundance_terr_eff <- as.data.frame(abundance_terr_inv$Sol)[308:397]
-abundance_terr_eff <- abundance_terr_eff %>% gather(rarefyID, slope, 1:90) %>%
-  group_by(rarefyID) %>% summarise(slope = mean(slope + -0.01051))
+abundance_terr_eff <- as.data.frame(abundance_terr_inv$Sol)[286:356]
+abundance_terr_eff <- abundance_terr_eff %>% gather(rarefyID, slope, 1:70) %>%
+  group_by(rarefyID) %>% summarise(slope = mean(slope + -0.01011))
 abundance_terr_eff$taxa <- "Terrestrial"
 abundance_terr_intervals <- as.data.frame(HPDinterval(abundance_terr_inv$Sol + abundance_terr_inv$Sol[, 'year2']))
-abundance_terr_intervals <- abundance_terr_intervals[308:397,]
+abundance_terr_intervals <- abundance_terr_intervals[286:356,]
 abundance_terr_intervals$rarefyID <- rownames(abundance_terr_intervals)
 abundance_terr_eff <- left_join(abundance_terr_eff, abundance_terr_intervals)
 abundance_terr_eff$rarefyID <- gsub("year2.rarefyID.", "", abundance_terr_eff$rarefyID)
@@ -303,13 +370,57 @@ seibold_effs6$label <- "Seibold et al. 2019 (grassland)"
 abundance_effs_published <- published_effect_sizes %>% filter(Taxon %in% c("walking sticks"))
 abundance_effs_published$label <- "Lister and Garcia 2018"
 
+# Add van Klink et al. effect sizes
+# Extract slopes and 95% CIs for each time series
+abundance_fresh_eff_vanklink <- as.data.frame(abundance_fresh_inv2$Sol)[619:697]
+abundance_fresh_eff_vanklink <- abundance_fresh_eff_vanklink %>% gather(rarefyID, slope, 1:79) %>%
+  group_by(rarefyID) %>% summarise(slope = mean(slope + 0.001444))
+abundance_fresh_eff_vanklink$taxa <- "Freshwater"
+abundance_fresh_intervals_vanklink <- as.data.frame(HPDinterval(abundance_fresh_inv2$Sol + abundance_fresh_inv2$Sol[, 'year2']))
+abundance_fresh_intervals_vanklink <- abundance_fresh_intervals_vanklink[619:697,]
+abundance_fresh_intervals_vanklink$rarefyID <- rownames(abundance_fresh_intervals_vanklink)
+abundance_fresh_eff_vanklink <- left_join(abundance_fresh_eff_vanklink, abundance_fresh_intervals_vanklink)
+
+abundance_terr_eff_vanklink <- as.data.frame(abundance_terr_inv2$Sol)[675:895]
+abundance_terr_eff_vanklink <- abundance_terr_eff_vanklink %>% gather(rarefyID, slope, 1:221) %>%
+  group_by(rarefyID) %>% summarise(slope = mean(slope + -0.013943))
+abundance_terr_eff_vanklink$taxa <- "Terrestrial"
+abundance_terr_intervals_vanklink <- as.data.frame(HPDinterval(abundance_terr_inv2$Sol + abundance_terr_inv2$Sol[, 'year2']))
+abundance_terr_intervals_vanklink <- abundance_terr_intervals_vanklink[675:895,]
+abundance_terr_intervals_vanklink$rarefyID <- rownames(abundance_terr_intervals_vanklink)
+abundance_terr_eff_vanklink <- left_join(abundance_terr_eff_vanklink, abundance_terr_intervals_vanklink)
+
+# Combine effect sizes from freshwater and terrestrial in one object
+abundance_effs_vanklink <- bind_rows(abundance_fresh_eff_vanklink, abundance_terr_eff_vanklink)
+abundance_effs_vanklink$rarefyID <- gsub("year2.StudyDur_ID.", "", abundance_effs_vanklink$rarefyID)
+
+# Add duration
+abundance_effs_vanklink <- left_join(abundance_effs_vanklink, duration_vk, by = "rarefyID")
+
+# Create a column for significant or not
+abundance_effs_vanklink <- abundance_effs_vanklink %>%  mutate(category = with(., case_when(
+  (lower < 0 & upper < 0) ~ 'significant',
+  (lower > 0 & upper > 0) ~ 'significant',
+  (lower < 0 & upper > 0) ~ 'non-significant')))
+
+colnames(abundance_effs)
+colnames(abundance_effs_vanklink)
+
+colnames(abundance_effs_vanklink)[6] <- "duration"
+
+abundance_effs$dataset <- "BioTIME"
+abundance_effs_vanklink$dataset <- "van Klink et al."
+
+abundance_effs_all <- bind_rows(abundance_effs, abundance_effs_vanklink)
+abundance_effs_all$cat2 <- paste0(abundance_effs_all$category, abundance_effs_all$dataset)
+
 (figure2b <- ggplot() +
-    geom_point(data = abundance_effs, aes(x = duration, y = slope,
-                                          colour = taxa, shape = category), size = 3, alpha = 0.5) +
-    geom_point(data = abundance_effs[richness_effs$category == "non-significant",], aes(x = duration, y = slope,
-                                                                                        colour = taxa, shape = category), size = 3.2, alpha = 0.5) +
-    geom_point(data = abundance_effs[richness_effs$category == "non-significant",], aes(x = duration, y = slope,
-                                                                                        colour = taxa, shape = category), size = 3.4, alpha = 0.5) +
+    geom_point(data = abundance_effs_all, aes(x = duration, y = slope,
+                                          colour = taxa, shape = cat2), size = 3, alpha = 0.5) +
+    geom_point(data = abundance_effs_all[abundance_effs_all$category == "non-significant",], aes(x = duration, y = slope,
+                                                                                        colour = taxa, shape = cat2), size = 3.2, alpha = 0.5) +
+    geom_point(data = abundance_effs_all[abundance_effs_all$category == "non-significant",], aes(x = duration, y = slope,
+                                                                                        colour = taxa, shape = cat2), size = 3.4, alpha = 0.5) +
     geom_point(data = seibold_effs5, aes(x = duration, y = slope), 
                colour = "red", size = 3, alpha = 1) +
     geom_label_repel(data = seibold_effs5,
@@ -341,7 +452,7 @@ abundance_effs_published$label <- "Lister and Garcia 2018"
                      #nudge_y = -0.15,
                      min.segment.length = 1, inherit.aes = FALSE) +
     theme_inv() +
-    scale_shape_manual(values = c(21, 19)) +
+    scale_shape_manual(values = c(21, 2, 19, 17)) +
     scale_x_continuous(limits = c(0, 101)) +
     scale_colour_manual(values = c("#59BAC0", "#d8b70a")) +
     geom_hline(yintercept = 0, linetype = "dotted") +
@@ -352,19 +463,19 @@ abundance_effs_published$label <- "Lister and Garcia 2018"
 # Note that the message about the one point excluded is the Lister and Garcia
 # effect size which is too much of an outlier and doesn't fit on the graph
 
-ggsave(figure2b, filename = "figures/figure2b.png", height = 5, width = 5)
+ggsave(figure2b, filename = "figures/figure2b_June.png", height = 5, width = 5)
 
 # ** Species richness ----
 
 # Extract slopes and 95% CIs for each time series
 
 # Freshwater
-richness_fresh_eff <- as.data.frame(richness_fresh_inv$Sol)[66:80]
+richness_fresh_eff <- as.data.frame(richness_fresh_inv$Sol)[146:160]
 richness_fresh_eff <- richness_fresh_eff %>% gather(rarefyID, slope, 1:15) %>%
-  group_by(rarefyID) %>% summarise(slope = mean(slope + -0.008648))
+  group_by(rarefyID) %>% summarise(slope = mean(slope + -0.008924))
 richness_fresh_eff$taxa <- "Freshwater"
 richness_fresh_intervals <- as.data.frame(HPDinterval(richness_fresh_inv$Sol + richness_fresh_inv$Sol[, 'year2']))
-richness_fresh_intervals <- richness_fresh_intervals[66:80,]
+richness_fresh_intervals <- richness_fresh_intervals[146:160,]
 richness_fresh_intervals$rarefyID <- rownames(richness_fresh_intervals)
 richness_fresh_eff <- left_join(richness_fresh_eff, richness_fresh_intervals)
 richness_fresh_eff$rarefyID <- gsub("year2.rarefyID.", "", richness_fresh_eff$rarefyID)
@@ -372,7 +483,7 @@ richness_fresh_eff$rarefyID <- gsub("year2.rarefyID.", "", richness_fresh_eff$ra
 # Terrestrial
 richness_terr_eff <- as.data.frame(richness_terr_inv$Sol)[298:377]
 richness_terr_eff <- richness_terr_eff %>% gather(rarefyID, slope, 1:80) %>%
-  group_by(rarefyID) %>% summarise(slope = mean(slope + 0.007939))
+  group_by(rarefyID) %>% summarise(slope = mean(slope + 0.008119))
 richness_terr_eff$taxa <- "Terrestrial"
 richness_terr_intervals <- as.data.frame(HPDinterval(richness_terr_inv$Sol + richness_terr_inv$Sol[, 'year2']))
 richness_terr_intervals <- richness_terr_intervals[298:377,]
@@ -383,7 +494,7 @@ richness_terr_eff$rarefyID <- gsub("year2.rarefyID.", "", richness_terr_eff$rare
 richness_effs <- bind_rows(richness_fresh_eff, richness_terr_eff)
 
 # Add duration
-duration <- rarefied_medians2018 %>% dplyr::select(rarefyID, duration) %>% distinct()
+duration <- rarefied_medians %>% dplyr::select(rarefyID, duration) %>% distinct()
 richness_effs <- left_join(richness_effs, duration, by = "rarefyID")
 
 # Create a column for significant or not
@@ -738,3 +849,57 @@ ggsave(figure1SI_legend, filename = "figures/Figure1_SI.pdf",
 
 ggsave(figure1SI_legend, filename = "figures/Figure1_SI.png",
        height = 15, width = 19)
+
+# Map
+# BioTIME
+inv <- rarefied_medians %>% filter(TAXA %in% c("Terrestrial invertebrates",
+                                               "Freshwater invertebrates")) %>% 
+  filter(length(unique(YEAR)) > 4)
+
+inv_simple <- inv %>% dplyr::select(rarefyID_x, rarefyID_y, TAXA) %>% distinct()
+inv_simple$TAXA <- factor(inv_simple$TAXA, levels = c("Freshwater invertebrates",
+                                                         "Terrestrial invertebrates"),
+                             labels = c("Freshwater", "Terrestrial"))
+# van Klink et al.
+load("data/vanklink.RData")
+`aax9931-vanKlink-SM-Data-S2` <- readRDS("data/aax9931-vanKlink-SM-Data-S2.rds")
+meta_vk <- `aax9931-vanKlink-SM-Data-S2` %>% dplyr::select(Plot_ID, Datasource_ID, Realm)
+meta_vk <- meta_vk %>% rename("DataSource_ID" = Datasource_ID)
+vanklink <- left_join(vanklink, meta_vk, by = c("DataSource_ID", "Plot_ID"))
+vanklink <- filter(vanklink, Duration > 4)
+vanklink$StudyDur_ID <- paste0(vanklink$DataSource_ID, vanklink$Duration)
+
+# Remove time series which are from BioTIME to avoid duplicates
+bt_test <- `aax9931-vanKlink-SM-Data-S2` %>% filter(str_detect(Datasource_name, "BioTIME")) %>%
+  dplyr::select(Datasource_ID) %>% distinct()
+
+# Remove time series 63, 70, 249, 294, 301, 313 and 375
+
+vanklink <- vanklink %>% filter(!DataSource_ID %in% c("63", "70", "249",
+                                                      "294", "301", "313", "375"))
+vanklink_simple <- vanklink %>% dplyr::select(Longitude, Latitude, Realm) %>% distinct()
+
+world <- map_data("world")
+
+(inv.map <- ggplot() +
+    geom_map(map = world, data = world,
+             aes(long, lat, map_id = region), 
+             color = "gray80", fill = "gray80", size = 0.3) +
+    coord_proj("+proj=eck4") +
+    theme_map() +
+    geom_point(data = inv_simple, 
+               aes(x = rarefyID_x, y = rarefyID_y, colour = TAXA),
+               alpha = 0.6, size = 2, shape = 19) +
+    geom_point(data = vanklink_simple, 
+               aes(x = Longitude, y = Latitude, colour = Realm),
+               alpha = 0.6, size = 2, shape = 17) +
+    scale_colour_manual(values = c("#59BAC0", "#d8b70a")) +
+    theme(legend.position = "bottom",
+          legend.title = element_blank(),
+          legend.text = element_text(size = 12),
+          legend.justification = "top"))
+
+# The warning message is about time series which didn't have freshwater/terrestrial noted 
+# those weren't used in the analyses
+
+ggsave(inv.map, filename = "figures/inv_mapJune.pdf", height = 5, width = 8)
