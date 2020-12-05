@@ -1,4 +1,5 @@
-
+# Permutation analyses
+# Code by Ally Phillimore
 
 library(tidyverse)
 library(lme4)
@@ -6,7 +7,7 @@ library(lmerTest)
 library(scales)
 
 # Data ----
-seibold <- read.csv("~/Documents/ArmageddonHub/data/25786.txt", sep = "\t", header = TRUE)
+seibold <- read.csv("data/25786.txt", sep = "\t", header = TRUE)
 
 seibold$yearfactor <- as.factor(seibold$CollectionYear)
 seibold$yearcenter <- seibold$CollectionYear-2012
@@ -54,6 +55,7 @@ for (x in 1:npermute){
 #two tailed p value 0.3684
 
 #########
+#0.46
 
 abundance_grass1 <- glmer(abundance_identified ~ yearcenter + region + (1|PlotID) + (1| PlotIDYear), family = "poisson", data = grass)
 abundance_grass_coef<-coefficients(summary(abundance_grass1))[2,1]
@@ -72,6 +74,7 @@ for (x in 1:npermute){
 
 
 #########
+#0.036
 
 abundance_forest1 <- glmer(abundance_identified ~ yearcenter + region + (1|PlotID) + (1| PlotIDYear), family = "poisson", data = forest_all)
 abundance_forest_coef<-coefficients(summary(abundance_forest1))[2,1]
@@ -88,8 +91,8 @@ for (x in 1:npermute){
 
 2*length(which(nullcoef_abundance_forest<= abundance_forest_coef))/npermute
 
-
 #########
+#1
 
 species_grass1 <- glmer(species ~ yearcenter + region + (1|PlotID) + (1| PlotIDYear), family = "poisson", data = grass)
 species_grass_coef<-coefficients(summary(species_grass1))[2,1]
@@ -105,7 +108,7 @@ for (x in 1:npermute){
 }
 
 2*length(which(nullcoef_species_grass<= species_grass_coef))/npermute
-
+#0.122
 
 #########
 
@@ -123,7 +126,7 @@ for (x in 1:npermute){
 }
 
 2*length(which(nullcoef_species_forest<= species_forest_coef))/npermute
-
+#0.424
 
 
 
